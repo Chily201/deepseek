@@ -12,10 +12,15 @@
 ## 为什么需要这个东西
 
 `dsh-chat-import` 内置了 **40 个来源解析器**：Claude Code、ChatGPT、Codex、Kimi、Qoder、
-opencode、Cursor、Gemini……**但没有 DeepSeek 官方导出的解析器。**
+opencode、Cursor、Gemini……**其中没有 DeepSeek 官方导出的原生解析器。**
 
-结果是：你在 chat.deepseek.com 申请到的官方导出（全量、含推理过程），
-**没有现成的路进 DSH**。这个工具补上这一段。
+官方支持的路径是 **interchange v1**：`dsh-chat-import` 从 0.24.1 起把 interchange v1
+当作一等导入格式，并注册了 `dsh-chat-import-convert` skill，让 Agent 按
+[docs/INTERCHANGE-GUIDE.md](https://github.com/Nwflower/dsh-chat-import/blob/main/docs/INTERCHANGE-GUIDE.md)
+把任意来源转成 interchange 文档。
+
+所以缺的不是"路"，而是**一个现成的、可验证的转换器**——你没必要让 Agent 从零再写一遍。
+本工具就是这样一个转换器，并且额外处理了两个实践中的坑（见下方「踩过的坑」）。
 
 ---
 
@@ -206,6 +211,29 @@ interchange 规范要求图片块必须带合法 `data`，否则会降级成 `[i
 | 独立 `FILE` 节点 | 225（展开为 235 条附件记录） |
 | 被切开的超长块 | 10 |
 | 主链外未导出的节点 | 83 |
+
+---
+
+## 相关实现
+
+同一个目标已经有别的实现，这里如实列出，方便你选：
+
+- **[@knopki 的 `deepseek-to-interchange.mjs`](https://gist.github.com/knopki/ea43aa2a04171f1a9e3e3639c8744ed0)**
+  （2026-10-04）：Node 单文件转换器。dsh-chat-import 作者已在 **0.25.2** 上用它做过
+  DeepSeek 官方导出的端到端验证（见 [issue #70](https://github.com/Nwflower/dsh-chat-import/issues/70)）。
+
+两者都能用，差异如下：
+
+| | knopki 的 gist | 本项目 |
+| --- | --- | --- |
+| 运行时 | Node（`.mjs`，≥18） | Python（`>=3.11`），纯标准库 |
+| **超长块切分** | 无 | **有**（避免被静默裁剪，见「坑 2」） |
+| 输出扩展名 | `.interchange.json` | `.jsonl`（适配目录收集器，见「坑 1」） |
+| 自检与样例 | 无 | 8 项断言 + 合成样例 |
+| 分支选择 | 取 `inserted_at` 最新的子节点 | 取子树最大的链 |
+| 过滤参数 | `--only` / `--from` / `--dry-run` | 无 |
+
+选哪个取决于你的运行时，以及你要不要那两个坑的保护。
 
 ---
 
