@@ -1,0 +1,22 @@
+# 输出的转换结果可能包含个人对话内容，绝不提交
+interchange/
+out/
+test-*/
+*.interchange.json
+*.interchange.jsonl
+
+# 转换报告里含对话标题与片段预览
+convert-report.json
+*-report.json
+
+# 真实的 DeepSeek 导出（含个人数据）
+conversations.json
+deepseek_data-*.zip
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
